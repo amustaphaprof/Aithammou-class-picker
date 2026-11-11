@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#4f46e5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>اختيار التلاميذ — الفروع اللانهائية</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<style>
+/* ============================================================
+   1. الأساسيات
+   ============================================================ */
+:root {
+  --bg:#f5f5f7; --card:#ffffff; --text:#1a1a2e; --muted:#6b7280;
+  --primary:#4f46e5; --primary-dark:#4338ca;
+  --success:#10b981; --warning:#f59e0b; --danger:#ef4444;
+  --border:#e5e7eb; --radius:20px; --shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+[data-theme="dark"] {
+  --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8;
+  --border:#334155; --shadow:0 10px 30px rgba(0,0,0,0.4);
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body {
+  margin:0; padding:0; height:100%;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
+  background:var(--bg); color:var(--text);
+  overflow:hidden; touch-action:manipulation; overscroll-behavior:contain;
+}
+body { display:flex; flex-direction:column; height:100dvh; }
+
+/* ============================================================
+   2. الشريط العلوي
+   ============================================================ */
+header {
+  padding:12px 16px; background:var(--card);
+  border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:14px; flex-shrink:0; z-index:10; gap:10px;
+}
+.header-left {
+  display:flex; align-items:center; gap:8px;
+  min-width:0; flex:1;
+}
+header .class-name {
+  font-weight:700; font-size:14px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+header .progress {
+  background:var(--primary); color:#fff; padding:6px 14px;
+  border-radius:999px; font-size:13px; font-weight:600;
+  transition:transform .3s cubic-bezier(0.34,1.56,0.64,1);
+  flex-shrink:0;
+}
+header .progress.bump { transform:scale(1.15); }
+
+/* زر الفرصة الثانية */
+.second-chance-btn {
+  background:var(--warning); color:#fff; border:none;
+  border-radius:999px; padding:6px 12px;
+  font-size:12px; font-weight:700; cursor:pointer;
+  display:inline-flex; align-items:center; gap:5px;
+  box-shadow:0 2px 8px rgba(245,158,11,0.4);
+  animation:scPulse 2s ease-in-out infinite;
+  font-family:inherit; flex-shrink:0;
+}
+.second-chance-btn:active { transform:scale(0.94); }
+.second-chance-btn.hidden { display:none; }
+@keyframes scPulse {
+  0%,100% { box-shadow:0 2px 8px rgba(245,158,11,0.4); }
+  50%     { box-shadow:0 4px 16px rgba(245,158,11,0.8); }
+}
+
+main { flex:1; position:relative; overflow:hidden; }
+
+#screen-log, #screen-settings {
+  position:absolute; inset:0; overflow-y:auto; padding:16px;
+  display:none;
+}
+#screen-log.active, #screen-settings.active {
+  display:block; animation:screenEnter .3s ease-out;
+}
+
+#screen-draw, #screen-question {
+  position:absolute; inset:0;
+  display:none; flex-direction:column;
+  justify-content:center; align-items:center; padding:20px;
+  background: radial-gradient(circle at 50% 20%, rgba(79,70,229,0.06) 0%, transparent 70%);
+}
+#screen-draw.active, #screen-question.active {
+  display:flex;
+  animation:fullscreenEnter .4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes fullscreenEnter {
+  from { opacity:0; transform:scale(0.96); }
+  to   { opacity:1; transform:scale(1); }
+}
+@keyframes screenEnter {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.tabs {
+  display:flex; background:var(--card);
+  border-top:1px solid var(--border);
+  padding:8px; gap:4px; flex-shrink:0; z-index:10;
+}
+.tabs button {
+  flex:1; padding:12px; border:none; background:transparent;
+  color:var(--muted); font-size:12px; font-weight:600;
+  cursor:pointer; border-radius:12px; font-family:inherit;
+  transition:background .2s,color .2s;
+}
+.tabs button.active { background:var(--bg); color:var(--primary); }
+.tabs button span { display:block; font-size:20px; margin-bottom:2px; }
+
+/* ============================================================
+   3. الأزرار
+   ============================================================ */
+.btn {
+  border:none; border-radius:var(--radius); padding:16px;
+  font-size:17px; font-weight:700; cursor:pointer;
+  font-family:inherit; transition:transform .1s,opacity .2s,box-shadow .2s;
+}
+.btn:active { transform:scale(0.96); }
+.btn-primary { background:var(--primary); color:#fff; box-shadow:0 4px 12px rgba(79,70,229,0.3); }
+.btn-secondary { background:var(--card); color:var(--text); border:2px solid var(--border); }
+.btn-success { background:var(--success); color:#fff; box-shadow:0 4px 12px rgba(16,185,129,0.3); }
+.btn-danger { background:var(--danger); color:#fff; box-shadow:0 4px 12px rgba(239,68,68,0.3); }
+.btn-ghost { background:transparent; color:var(--muted); padding:12px; font-size:14px; }
+
+.actions { display:flex; flex-direction:column; gap:12px; margin-top:24px; width:100%; max-width:500px; }
+
+.btn-draw {
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:#fff; font-size:22px; padding:28px;
+  box-shadow:0 12px 30px rgba(79,70,229,0.4);
+  animation:drawGlow 2.2s ease-in-out infinite;
+}
+@keyframes drawGlow {
+  0%,100% { box-shadow:0 12px 30px rgba(79,70,229,0.4); transform:scale(1); }
+  50%     { box-shadow:0 16px 40px rgba(79,70,229,0.6); transform:scale(1.02); }
+}
+
+/* ============================================================
+   5. بطاقة التلميذ
+   ============================================================ */
+.student-card {
+  background:linear-gradient(135deg, var(--card), rgba(79,70,229,0.03));
+  border:2px solid rgba(79,70,229,0.2);
+  border-radius:24px; padding:60px 20px; text-align:center;
+  box-shadow:0 20px 50px rgba(79,70,229,0.15);
+  width:100%; max-width:500px;
+  animation:cardPop .6s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes cardPop {
+  0%   { opacity:0; transform:scale(0.6) translateY(20px); }
+  100% { opacity:1; transform:scale(1) translateY(0); }
+}
+.student-name {
+  font-size:42px; font-weight:800; margin-bottom:12px;
+  line-height:1.3; color:var(--primary);
+  text-shadow:0 4px 15px rgba(79,70,229,0.2);
+}
+.student-code { font-size:15px; color:var(--muted); font-family:monospace; letter-spacing:1px; }
+
+.shuffle-stage {
+  position:relative; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:80px 20px; width:100%; max-width:500px; min-height:380px;
+  background:var(--card); border-radius:24px;
+  box-shadow:0 20px 50px rgba(0,0,0,0.1);
+  overflow:hidden;
+}
+.shuffle-stage::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(circle at center,rgba(79,70,229,0.15) 0%,transparent 60%);
+  animation:glowPulse 1.6s ease-in-out infinite; pointer-events:none;
+}
+.shuffle-stage.second-chance::before {
+  background:radial-gradient(circle at center,rgba(245,158,11,0.25) 0%,transparent 60%);
+}
+@keyframes glowPulse {
+  0%,100% { transform:scale(0.9); opacity:0.5; }
+  50%     { transform:scale(1.3); opacity:1; }
+}
+.shuffle-title {
+  font-size:18px; color:var(--muted); margin-bottom:36px;
+  font-weight:700; animation:textPulse 1.2s ease-in-out infinite;
+  position:relative; z-index:1;
+}
+.shuffle-stage.second-chance .shuffle-title {
+  color:var(--warning); font-weight:800;
+}
+@keyframes textPulse {
+  0%,100% { opacity:1; }
+  50%     { opacity:0.4; }
+}
+.shuffle-name {
+  font-size:40px; font-weight:800; min-height:60px;
+  text-align:center; position:relative; z-index:1;
+  transition:filter .1s ease,opacity .1s ease;
+  padding:0 10px; line-height:1.3; color:var(--text);
+}
+.shuffle-name.cycling { filter:blur(3px); opacity:0.5; }
+.shuffle-name.landed {
+  color:var(--primary); filter:none; opacity:1;
+  text-shadow:0 4px 15px rgba(79,70,229,0.3);
+  animation:landPop .7s cubic-bezier(0.34,1.56,0.64,1);
+}
+.shuffle-stage.second-chance .shuffle-name.landed {
+  color:var(--warning);
+  text-shadow:0 4px 15px rgba(245,158,11,0.3);
+}
+@keyframes landPop {
+  0%   { transform:scale(0.3); opacity:0; }
+  50%  { transform:scale(1.2); }
+  70%  { transform:scale(0.95); }
+  100% { transform:scale(1); opacity:1; }
+}
+.shuffle-hint {
+  margin-top:36px; font-size:14px; color:var(--muted);
+  position:relative; z-index:1; font-weight:600;
+}
+
+.manual-section {
+  background:var(--card); border-radius:var(--radius);
+  padding:16px; box-shadow:var(--shadow); margin-top:20px;
+  width:100%; max-width:500px;
+}
+.manual-section label {
+  display:block; font-size:13px; color:var(--muted);
+  font-weight:600; margin-bottom:8px;
+}
+.manual-section select {
+  width:100%; padding:14px; border-radius:12px;
+  border:1px solid var(--border); background:var(--bg);
+  color:var(--text); font-family:inherit; font-size:15px;
+  cursor:pointer;
+}
+
+/* ============================================================
+   7. شاشة السؤال
+   ============================================================ */
+.question-wrapper {
+  display:flex; flex-direction:column;
+  width:100%; max-width:700px; gap:16px;
+}
+.student-badge-row {
+  display:flex; justify-content:space-between; align-items:center;
+  width:100%;
+}
+.student-badge {
+  display:inline-block; background:var(--primary); color:#fff;
+  padding:10px 24px; border-radius:999px; font-weight:700; font-size:16px;
+  box-shadow:0 4px 12px rgba(79,70,229,0.3);
+  animation:badgeIn .4s ease-out .05s backwards;
+}
+.student-badge.second-chance {
+  background:var(--warning);
+  box-shadow:0 4px 12px rgba(245,158,11,0.3);
+}
+@keyframes badgeIn {
+  from { opacity:0; transform:translateY(-12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.timer {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--card); border:2px solid var(--border);
+  padding:8px 18px; border-radius:999px;
+  font-family:monospace; font-size:18px; font-weight:700;
+  color:var(--text); transition:all .3s; box-shadow:var(--shadow);
+}
+.timer .icon { font-size:20px; }
+.timer.warning { border-color:var(--warning); color:var(--warning); }
+.timer.danger {
+  border-color:var(--danger); color:var(--danger);
+  animation:timerPulse .8s ease-in-out infinite;
+}
+@keyframes timerPulse {
+  0%,100% { transform:scale(1); }
+  50%     { transform:scale(1.08); }
+}
+.timer.finished { background:var(--danger); color:#fff; border-color:var(--danger); }
+
+.question-card {
+  background:var(--card); border-radius:24px;
+  padding:36px 30px; box-shadow:0 20px 50px rgba(0,0,0,0.1);
+  border:1px solid var(--border);
+  animation:cardSlideIn .55s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes cardSlideIn {
+  from { opacity:0; transform:translateY(30px) scale(0.96); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+.question-label {
+  font-size:14px; color:var(--muted); margin-bottom:16px;
+  text-transform:uppercase; letter-spacing:1px; font-weight:700; text-align:center;
+}
+.question-text {
+  font-size:22px; line-height:2.8; font-weight:600; text-align:center;
+}
+
+.answer-box {
+  margin-top:20px; padding:20px;
+  background:rgba(16,185,129,0.1); border-radius:16px;
+  border-right:6px solid var(--success); overflow:hidden;
+  animation:answerReveal .4s ease-out;
+}
+[dir="ltr"] .answer-box { border-right:none; border-left:6px solid var(--success); }
+@keyframes answerReveal {
+  from { opacity:0; transform:translateY(-10px); max-height:0; padding:0 20px; margin:0; }
+  to   { opacity:1; transform:translateY(0); }
+}
+.answer-label { font-size:13px; color:var(--success); font-weight:800; margin-bottom:8px; }
+.answer-text { font-size:18px; line-height:2.4; font-weight:600; }
+.hidden { display:none !important; }
+
+.question-actions { display:flex; gap:12px; }
+.question-actions .btn { flex:1; padding:16px; font-size:16px; }
+
+.result-actions {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+}
+.result-actions .btn { padding:24px 8px; font-size:18px; line-height:1.4; }
+.result-actions .btn:nth-child(1) { animation:btnIn .4s ease-out .1s backwards; }
+.result-actions .btn:nth-child(2) { animation:btnIn .4s ease-out .2s backwards; }
+@keyframes btnIn {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.skip-row { display:flex; gap:12px; }
+.skip-row .btn { flex:1; padding:16px; }
+
+/* ============================================================
+   8. الصيغ الرياضية
+   ============================================================ */
+.math {
+  display:inline-block; direction:ltr; unicode-bidi:isolate;
+  font-family:'Cambria Math','Times New Roman',serif;
+  white-space:nowrap; vertical-align:middle;
+  margin:0 6px; color:var(--text); font-size:1.15em;
+}
+.math .lim {
+  display:inline-flex; flex-direction:column; align-items:center;
+  vertical-align:middle; line-height:1.1; margin:0 6px;
+}
+.math .lim-sym { font-size:1.1em; font-weight:700; font-style:italic; }
+.math .lim-sub { font-size:0.65em; margin-top:2px; }
+.math .frac {
+  display:inline-flex; flex-direction:column;
+  vertical-align:middle; text-align:center;
+  margin:0 6px; line-height:1.15;
+}
+.math .frac .num { border-bottom:2px solid currentColor; padding:0 12px 2px; }
+.math .frac .den { padding:2px 12px 0; }
+.question-text .math {
+  background:rgba(79,70,229,0.08); padding:4px 14px; border-radius:8px;
+}
+.answer-text .math { color:var(--success); }
+
+/* ============================================================
+   9. الإعدادات
+   ============================================================ */
+.setting-group {
+  background:var(--card); border-radius:var(--radius);
+  padding:16px; margin-bottom:12px; box-shadow:var(--shadow);
+  animation:fadeUp .3s ease-out backwards;
+}
+.setting-group:nth-child(1) { animation-delay:.02s; }
+.setting-group:nth-child(2) { animation-delay:.06s; }
+.setting-group:nth-child(3) { animation-delay:.10s; }
+.setting-group:nth-child(4) { animation-delay:.14s; }
+.setting-group:nth-child(5) { animation-delay:.18s; }
+.setting-group:nth-child(6) { animation-delay:.22s; }
+.setting-group:nth-child(7) { animation-delay:.26s; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.setting-group h3 { margin:0 0 12px; font-size:15px; color:var(--muted); font-weight:700; }
+.setting-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 0; border-bottom:1px solid var(--border); gap:12px;
+}
+.setting-row:last-child { border-bottom:none; }
+.setting-row label { font-size:14px; flex:1; font-weight:600; }
+select {
+  padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text); font-family:inherit;
+  font-size:14px; max-width:50%; font-weight:600;
+}
+.toggle {
+  position:relative; width:48px; height:28px;
+  background:var(--border); border-radius:999px;
+  cursor:pointer; transition:background .25s; flex-shrink:0;
+}
+.toggle.on { background:var(--primary); }
+.toggle::after {
+  content:''; position:absolute; top:3px; right:3px;
+  width:22px; height:22px; background:#fff; border-radius:50%;
+  transition:transform .25s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle.on::after { transform:translateX(-20px); }
+[dir="ltr"] .toggle::after { right:auto; left:3px; }
+[dir="ltr"] .toggle.on::after { transform:translateX(20px); }
+
+.student-list {
+  max-height:380px; overflow-y:auto;
+  border-radius:12px; background:var(--bg);
+  border:1px solid var(--border); -webkit-overflow-scrolling:touch;
+}
+.student-row {
+  display:flex; align-items:center; gap:12px;
+  padding:12px; border-bottom:1px solid var(--border);
+  cursor:pointer; user-select:none; transition:background .15s;
+}
+.student-row:last-child { border-bottom:none; }
+.student-row:active { background:rgba(79,70,229,0.08); }
+.student-row input[type=checkbox] { width:22px; height:22px; accent-color:var(--primary); cursor:pointer; flex-shrink:0; }
+.student-row .sname { flex:1; font-size:14px; font-weight:600; transition:opacity .2s; }
+.student-row .scode { color:var(--muted); font-size:11px; font-family:monospace; }
+.student-row input:checked ~ .sname { text-decoration:line-through; color:var(--muted); opacity:0.6; }
+.list-toolbar { display:flex; gap:8px; margin-top:10px; }
+.list-toolbar button {
+  flex:1; padding:10px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text);
+  border-radius:10px; font-family:inherit; font-size:13px;
+  cursor:pointer; font-weight:700; transition:background .15s;
+}
+.list-toolbar button:active { background:var(--border); }
+.hint { font-size:12px; color:var(--muted); margin:-4px 0 12px; line-height:1.6; }
+
+/* ============================================================
+   10. السجل والإحصائيات
+   ============================================================ */
+.stats-card {
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  border-radius:var(--radius); padding:24px; color:#fff;
+  margin-bottom:16px; box-shadow:0 10px 30px rgba(79,70,229,0.3);
+  animation:fadeUp .4s ease-out;
+}
+.stats-card .stats-title { font-size:15px; opacity:0.9; margin-bottom:16px; font-weight:700; text-align:center; }
+.stats-card .stats-row { display:flex; justify-content:space-around; text-align:center; }
+.stats-card .stat-item .stat-num { font-size:32px; font-weight:800; }
+.stats-card .stat-item .stat-label { font-size:12px; opacity:0.9; margin-top:4px; font-weight:600; }
+.stats-card .progress-bar { height:10px; background:rgba(255,255,255,0.2); border-radius:5px; margin-top:20px; overflow:hidden; }
+.stats-card .progress-fill { height:100%; background:#fff; border-radius:5px; transition:width .6s cubic-bezier(0.34,1.56,0.64,1); }
+
+.message { text-align:center; padding:40px 20px; color:var(--muted); }
+.message .big { font-size:64px; margin-bottom:16px; }
+.message h2 { color:var(--text); margin:12px 0; font-size:24px; }
+.message p { margin:8px 0; font-size:16px; }
+
+.log-item {
+  background:var(--card); border-radius:16px;
+  padding:16px; margin-bottom:10px; border:1px solid var(--border);
+  box-shadow:var(--shadow);
+  animation:fadeUp .3s ease-out backwards;
+}
+.log-item .name { font-weight:700; font-size:16px; }
+.log-item .counts { font-size:14px; color:var(--muted); margin-top:8px; display:flex; gap:16px; font-weight:600; }
+.log-item .tag { padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; margin-right:6px; }
+.log-item .tag.sc { background:var(--warning); color:#fff; }
+.log-item .tag.nt { background:var(--muted); color:#fff; }
+
+@media (prefers-reduced-motion:reduce) {
+  * { animation-duration:0.01ms !important; transition-duration:0.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="class-name" id="class-name">...</span>
+    <button class="second-chance-btn hidden" id="second-chance-btn">
+      <span>🎲</span><span>فرصة ثانية</span><span id="sc-count">(0)</span>
+    </button>
+  </div>
+  <div class="progress" id="progress">0/0</div>
+</header>
+
+<main>
+  <section id="screen-draw" class="screen active"><div id="draw-content" style="display:contents"></div></section>
+  <section id="screen-question" class="screen"><div id="question-content" style="display:contents"></div></section>
+  <section id="screen-log" class="screen"><div id="log-content"></div></section>
+  <section id="screen-settings" class="screen"><div id="settings-content"></div></section>
+</main>
+
+<nav class="tabs">
+  <button data-screen="draw" class="active"><span>🏠</span>الرئيسية</button>
+  <button data-screen="log"><span>📋</span>السجل</button>
+  <button data-screen="settings"><span>⚙️</span>الإعدادات</button>
+</nav>
+
+<script src="students.js"></script>
+<script>
+// ============================================================
+// 1. القواميس
+// ============================================================
+const T = {
+  ar: {
+    home:'الرئيسية', log:'السجل', settings:'الإعدادات',
+    ready:'جاهز للاختيار', available:'تلميذاً متاحاً من', chooseRandom:'اختر تلميذاً',
+    secondChance:'فرصة ثانية',
+    shuffling:'جاري السحب...', shufflingSecond:'جاري سحب الفرصة الثانية...',
+    randomPick:'اختيار عشوائي', secondChancePick:'فرصة ثانية',
+    chooseManually:'👤 أو اختر يدوياً:', selectStudent:'— اختر تلميذاً —',
+    startQuestion:'📝 ابدأ السؤال', absent:'🚫 غائب — تلميذ آخر',
+    allCalled:'تم استدعاء جميع التلاميذ!', studentsCount:'تلميذاً',
+    newRound:'🔄 بدء جولة جديدة', resetAll:'🗑️ تصفير شامل',
+    showAnswer:'👁️ إظهار الجواب', hideAnswer:'🙈 إخفاء الجواب', otherQuestion:'🔄 سؤال آخر',
+    correct:'صحيح', wrong:'خطأ', skip:'⏭️ تخطي بدون تسجيل',
+    statsTitle:'📊 مستوى القسم', called:'تم استدعاؤهم', notAnswered:'لم يجب بعد',
+    secondChanceTag:'فرصة ثانية',
+    currentClass:'القسم الحالي', timer:'المؤقت', enableTimer:'تفعيل المؤقت',
+    timerDuration:'مدة المؤقت', autoRecord:'تسجيل تلقائي كخطأ عند انتهاء الوقت',
+    behavior:'السلوك', allowRecall:'السماح بإعادة استدعاء من أجاب',
+    exhausted:'عند استنفاد الجميع', msgOnly:'رسالة فقط', autoReset:'إعادة تصفير تلقائية',
+    appearance:'المظهر واللغة', darkMode:'الوضع الليلي', language:'اللغة / Langue',
+    arabic:'العربية', french:'Français',
+    transfer:'نقل بين الأجهزة', transferHint:'صدّر الحالة كاملة من جهاز، واستوردها في جهاز آخر.',
+    exportState:'تصدير الحالة', importState:'استيراد الحالة',
+    importStudents:'استيراد قائمة التلاميذ', importStudentsHint:'اختر ملف JSON يحتوي على قائمة التلاميذ (صيغة students.js).',
+    manualManage:'إدارة التلاميذ يدوياً', manualHint:'ضع علامة ✓ على التلميذ لاعتباره "مُستدعى".',
+    checkAll:'تحديد الكل', uncheckAll:'إلغاء الكل',
+    manage:'إدارة', resetCalled:'تصفير حالة "تم الاستدعاء"', resetEverything:'تصفير شامل (كل شيء)',
+    exportCSV:'تصدير السجل (CSV)', reset:'تصفير',
+    confirmResetCalled:'تصفير حالة الاستدعاء فقط؟',
+    confirmResetAll:'حذف جميع البيانات والنتائج؟',
+    importedSuccess:'✅ تم الاستيراد بنجاح!', importError:'❌ خطأ في الملف: ',
+    confirmImport:'سيتم استبدال الحالة الحالية بـ:\n', confirmImport2:'\n\nمتابعة؟',
+    timerFinished:'انتهى',
+    catAsymptote:'تفسير هندسي — مقارب', catBranch:'تفسير هندسي — فرع شلجمي',
+    qWhatIsGeometric:'فما هو التفسير الهندسي؟',
+    and:'و', if:'إذا كان',
+    ansVertical:'المستقيم (D): <strong>x = {a}</strong> مستقيم مقارب عمودي للمنحنى (Cf).',
+    ansHorizontal:'المستقيم (D): <strong>y = {b}</strong> مستقيم مقارب أفقي للمنحنى (Cf) عند {s}.',
+    ansOblique:'المستقيم (D): <strong>{eq}</strong> مستقيم مقارب مائل للمنحنى (Cf) عند {s}.',
+    ansParaOx:'المنحنى (Cf) يقبل <strong>فرعاً شلجمياً باتجاه محور الأفاصيل (Ox)</strong> عند {s}.',
+    ansParaOy:'المنحنى (Cf) يقبل <strong>فرعاً شلجمياً باتجاه محور الأراتيب (Oy)</strong> عند {s}.',
+    ansParaLine:'المنحنى (Cf) يقبل <strong>فرعاً شلجمياً باتجاه المستقيم (D): y = {aIn}</strong> عند {s}.',
+    nameLabel:'الاسم', codeLabel:'الرمز'
+  },
+  fr: {
+    home:'Accueil', log:'Journal', settings:'Paramètres',
+    ready:'Prêt à choisir', available:'élèves disponibles sur', chooseRandom:'Choisir un élève',
+    secondChance:'Deuxième chance',
+    shuffling:'Tirage au sort...', shufflingSecond:'Tirage — deuxième chance...',
+    randomPick:'Sélection aléatoire', secondChancePick:'Deuxième chance',
+    chooseManually:'👤 Ou choisir manuellement:', selectStudent:'— Choisir un élève —',
+    startQuestion:'📝 Commencer', absent:'🚫 Absent — Suivant',
+    allCalled:'Tous les élèves ont été appelés !', studentsCount:'élèves',
+    newRound:'🔄 Nouveau tour', resetAll:'🗑️ Réinitialisation totale',
+    showAnswer:'👁️ Afficher la réponse', hideAnswer:'🙈 Masquer', otherQuestion:'🔄 Autre question',
+    correct:'Correct', wrong:'Faux', skip:'⏭️ Passer',
+    statsTitle:'📊 Niveau de la classe', called:'Appelés', notAnswered:'Pas encore répondu',
+    secondChanceTag:'2ᵉ chance',
+    currentClass:'Classe actuelle', timer:'Minuteur', enableTimer:'Activer le minuteur',
+    timerDuration:'Durée', autoRecord:'Enregistrer faux à la fin du temps',
+    behavior:'Comportement', allowRecall:'Autoriser le rappel',
+    exhausted:'En cas d\'épuisement', msgOnly:'Message uniquement', autoReset:'Réinitialisation auto',
+    appearance:'Apparence et Langue', darkMode:'Mode sombre', language:'Langue / اللغة',
+    arabic:'العربية', french:'Français',
+    transfer:'Transfert', transferHint:'Exportez l\'état d\'un appareil et importez-le sur un autre.',
+    exportState:'Exporter', importState:'Importer',
+    importStudents:'Importer la liste des élèves', importStudentsHint:'Choisissez un fichier JSON (format students.js).',
+    manualManage:'Gestion manuelle', manualHint:'Cochez un élève pour le marquer "appelé".',
+    checkAll:'Tout cocher', uncheckAll:'Tout décocher',
+    manage:'Gestion', resetCalled:'Réinitialiser "Appelés"', resetEverything:'Réinitialisation totale',
+    exportCSV:'Exporter CSV', reset:'Réinitialiser',
+    confirmResetCalled:'Réinitialiser "Appelé" ?',
+    confirmResetAll:'Supprimer toutes les données ?',
+    importedSuccess:'✅ Importation réussie !', importError:'❌ Erreur : ',
+    confirmImport:'Remplacer l\'état par :\n', confirmImport2:'\n\nContinuer ?',
+    timerFinished:'Fini',
+    catAsymptote:'Interprétation géométrique — Asymptote', catBranch:'Interprétation géométrique — Branche parabolique',
+    qWhatIsGeometric:'Quelle est l\'interprétation géométrique ?',
+    and:'et', if:'Si',
+    ansVertical:'La droite (D): <strong>x = {a}</strong> est une asymptote verticale à (Cf).',
+    ansHorizontal:'La droite (D): <strong>y = {b}</strong> est une asymptote horizontale à (Cf) au voisinage de {s}.',
+    ansOblique:'La droite (D): <strong>{eq}</strong> est une asymptote oblique à (Cf) au voisinage de {s}.',
+    ansParaOx:'(Cf) admet une <strong>branche parabolique de direction l\'axe des abscisses (Ox)</strong> au voisinage de {s}.',
+    ansParaOy:'(Cf) admet une <strong>branche parabolique de direction l\'axe des ordonnées (Oy)</strong> au voisinage de {s}.',
+    ansParaLine:'(Cf) admet une <strong>branche parabolique de direction (D): y = {aIn}</strong> au voisinage de {s}.',
+    nameLabel:'Nom', codeLabel:'Code'
+  }
+};
+
+function t(key) {
+  const lang = state?.settings?.lang || 'ar';
+  return T[lang]?.[key] || T['ar'][key] || key;
+}
+
+// ============================================================
+// 2. البيانات والحالة
+// ============================================================
+const SAMPLE_DATA = {
+  institution:"—", teacher:"—", subject:"الرياضيات", year:"—",
+  classes:[{id:"عينة", level:"قسم تجريبي", students:[
+    {id:"1",code:"TEST001",name:"الغندوري هند"},
+    {id:"2",code:"TEST002",name:"السلواني أسامة"},
+    {id:"3",code:"TEST003",name:"سمري رجاء"},
+    {id:"4",code:"TEST004",name:"النعيمي سعد"}
+  ]}]
+};
+let DATA = (typeof window.STUDENTS_DATA !== 'undefined') ? window.STUDENTS_DATA : SAMPLE_DATA;
+
+const KEY = 'classPicker.v6';
+
+const defaults = () => ({
+  classId: DATA.classes[0].id,
+  statuses: {},   // code -> 'called' | 'absent' | 'wrong' | 'finished'
+  results: {},    // code -> {correct: N, wrong: M}
+  currentStudent: null,
+  currentQuestion: null,
+  currentIsSecondChance: false,
+  settings: {
+    allowRecall: false,
+    exhaustedAction: 'message',
+    theme: 'light',
+    lang: 'ar',
+    timerEnabled: true,
+    timerDuration: 60,
+    timerAutoRecord: false,
+  }
+});
+let state = load();
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && s.settings) {
+      return { ...defaults(), ...s, settings:{ ...defaults().settings, ...s.settings } };
+    }
+  } catch(e) {}
+  return defaults();
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+function applyLanguage() {
+  const lang = state.settings.lang || 'ar';
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const tabs = document.querySelectorAll('.tabs button');
+  if (tabs.length >= 3) {
+    tabs[0].innerHTML = `<span>🏠</span>${t('home')}`;
+    tabs[1].innerHTML = `<span>📋</span>${t('log')}`;
+    tabs[2].innerHTML = `<span>⚙️</span>${t('settings')}`;
+  }
+}
+
+// ============================================================
+// 3. مساعدات الحالة
+// ============================================================
+const currentClass = () => DATA.classes.find(c => c.id === state.classId) || DATA.classes[0];
+const students = () => currentClass().students;
+const statusOf = code => state.statuses[code] || 'available';
+
+function availableStudents() {
+  const allow = state.settings.allowRecall;
+  return students().filter(s => {
+    const st = statusOf(s.code);
+    if (st === 'available') return true;
+    if (st === 'called' && allow) return true;
+    return false;
+  });
+}
+
+function secondChanceStudents() {
+  return students().filter(s => statusOf(s.code) === 'wrong');
+}
+
+function progressStats() {
+  const total = students().length;
+  const called = students().filter(s => {
+    const st = statusOf(s.code);
+    return st === 'called' || st === 'wrong' || st === 'finished';
+  }).length;
+  return { called, total };
+}
+function classStats() {
+  let correct = 0, wrong = 0;
+  Object.values(state.results).forEach(r => {
+    correct += r.correct || 0;
+    wrong   += r.wrong   || 0;
+  });
+  return { correct, wrong };
+}
+
+// ============================================================
+// 4. الأصوات
+// ============================================================
+function beep(freq = 800, duration = 200) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration/1000);
+    osc.start();
+    osc.stop(ctx.currentTime + duration/1000);
+  } catch(e) {}
+}
+
+// ============================================================
+// 5. المولّدات
+// ============================================================
+const rnd = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+const rndNZ = (min,max) => { let n; do { n = rnd(min,max); } while(n === 0); return n; };
+
+const math = (html) => `<span class="math" dir="ltr">${html}</span>`;
+const lim  = (sub) => `<span class="lim"><span class="lim-sym">lim</span><span class="lim-sub">${sub}</span></span>`;
+const frac = (num,den) => `<span class="frac"><span class="num">${num}</span><span class="den">${den}</span></span>`;
+
+function lineEq(a,b) {
+  let aStr;
+  if (a === 1) aStr = 'x';
+  else if (a === -1) aStr = '−x';
+  else aStr = (a > 0 ? '' : '−') + Math.abs(a) + 'x';
+  let bStr = '';
+  if (b !== 0) bStr = b > 0 ? ` + ${b}` : ` − ${Math.abs(b)}`;
+  return `y = ${aStr}${bStr}`;
+}
+
+const generators = {
+  vertical() {
+    const a = rndNZ(-6,6);
+    const s = Math.random() < 0.5 ? '+' : '−';
+    return {
+      cat: t('catAsymptote'),
+      q: `${t('if')} ${math(`${lim(`x→${a}`)} f(x) = ${s}∞`)}<br>${t('qWhatIsGeometric')}`,
+      a: t('ansVertical').replace('{a}', a)
+    };
+  },
+  horizontal() {
+    const b = rnd(-5,5);
+    const s = Math.random() < 0.5 ? '+∞' : '−∞';
+    return {
+      cat: t('catAsymptote'),
+      q: `${t('if')} ${math(`${lim(`x→${s}`)} f(x) = ${b}`)}<br>${t('qWhatIsGeometric')}`,
+      a: t('ansHorizontal').replace('{b}', b).replace('{s}', s)
+    };
+  },
+  obliqueDiff() {
+    const a = rndNZ(1,4), b = rnd(-5,5);
+    const s = Math.random() < 0.5 ? '+∞' : '−∞';
+    const bIn = b >= 0 ? `+ ${b}` : `− ${Math.abs(b)}`;
+    const aIn = a === 1 ? 'x' : a === -1 ? '−x' : a > 0 ? `${a}x` : `−${Math.abs(a)}x`;
+    return {
+      cat: t('catAsymptote'),
+      q: `${t('if')} ${math(`${lim(`x→${s}`)} f(x) = ±∞`)}<br>${t('and')} ${math(`${lim(`x→${s}`)} [f(x) − (${aIn} ${bIn})] = 0`)}<br>${t('qWhatIsGeometric')}`,
+      a: t('ansOblique').replace('{eq}', lineEq(a,b)).replace('{s}', s)
+    };
+  },
+  obliqueRatio() {
+    const a = rndNZ(1,4), b = rnd(-5,5);
+    const s = Math.random() < 0.5 ? '+∞' : '−∞';
+    const aIn = a === 1 ? 'x' : a === -1 ? '−x' : a > 0 ? `${a}x` : `−${Math.abs(a)}x`;
+    return {
+      cat: t('catAsymptote'),
+      q: `${t('if')} ${math(`${lim(`x→${s}`)} f(x) = ±∞`)}<br>${t('and')} ${math(`${lim(`x→${s}`)} ${frac('f(x)','x')} = ${a}`)}<br>${t('and')} ${math(`${lim(`x→${s}`)} [f(x) − ${aIn}] = ${b}`)}<br>${t('qWhatIsGeometric')}`,
+      a: t('ansOblique').replace('{eq}', lineEq(a,b)).replace('{s}', s)
+    };
+  },
+  paraOx() {
+    const s = Math.random() < 0.5 ? '+∞' : '−∞';
+    const fS = Math.random() < 0.5 ? '+' : '−';
+    return {
+      cat: t('catBranch'),
+      q: `${t('if')} ${math(`${lim(`x→${s}`)} f(x) = ${fS}∞`)}<br>${t('and')} ${math(`${lim(`x→${s}`)} ${frac('f(x)','x')} = 0`)}<br>${t('qWhatIsGeometric')}`,
+      a: t('ansParaOx').replace('{s}', s)
+    };
+  },
+  paraOy() {
+    const s = Math.random() < 0.5 ? '+∞' : '−∞';
+    const fS = Math.random() < 0.5 ? '+' : '−';
+    const rS = Math.random() < 0.5 ? '+' : '−';
+    return {
+      cat: t('catBranch'),
+      q: `${t('if')} ${math(`${lim(`x→${s}`)} f(x) = ${fS}∞`)}<br>${t('and')} ${math(`${lim(`x→${s}`)} ${frac('f(x)','x')} = ${rS}∞`)}<br>${t('qWhatIsGeometric')}`,
+      a: t('ansParaOy').replace('{s}', s)
+    };
+  },
+  paraLine() {
+    const a = rndNZ(1,4);
+    const s = Math.random() < 0.5 ? '+∞' : '−∞';
+    const aIn = a === 1 ? 'x' : a === -1 ? '−x' : a > 0 ? `${a}x` : `−${Math.abs(a)}x`;
+    const fS = Math.random() < 0.5 ? '+' : '−';
+    return {
+      cat: t('catBranch'),
+      q: `${t('if')} ${math(`${lim(`x→${s}`)} f(x) = ${fS}∞`)}<br>${t('and')} ${math(`${lim(`x→${s}`)} ${frac('f(x)','x')} = ${a}`)}<br>${t('and')} ${math(`${lim(`x→${s}`)} [f(x) − ${aIn}] = ±∞`)}<br>${t('qWhatIsGeometric')}`,
+      a: t('ansParaLine').replace('{aIn}', aIn).replace('{s}', s)
+    };
+  },
+};
+
+function generateQuestion() {
+  const keys = Object.keys(generators);
+  const k = keys[rnd(0, keys.length-1)];
+  const g = generators[k]();
+  return { category:g.cat, question:g.q, answer:g.a, type:k };
+}
+
+// ============================================================
+// 6. المؤقت
+// ============================================================
+let timerState = { interval:null, remaining:60, running:false };
+
+function startTimer() {
+  stopTimer();
+  if (!state.settings.timerEnabled) return;
+  timerState.remaining = state.settings.timerDuration;
+  timerState.running = true;
+  updateTimerUI();
+  timerState.interval = setInterval(() => {
+    timerState.remaining--;
+    updateTimerUI();
+    if (timerState.remaining <= 0) onTimerEnd();
+  }, 1000);
+}
+function stopTimer() {
+  if (timerState.interval) clearInterval(timerState.interval);
+  timerState.interval = null;
+  timerState.running = false;
+}
+function updateTimerUI() {
+  const el = document.getElementById('timer-display');
+  if (!el) return;
+  if (timerState.remaining <= 0) {
+    el.innerHTML = `<span class="icon">⏰</span><span>${t('timerFinished')}</span>`;
+    el.className = 'timer finished';
+    return;
+  }
+  const m = Math.floor(timerState.remaining / 60);
+  const s = timerState.remaining % 60;
+  el.innerHTML = `<span class="icon">⏱️</span><span>${m}:${s.toString().padStart(2,'0')}</span>`;
+  el.className = 'timer';
+  if (timerState.remaining <= 10) el.classList.add('danger');
+  else if (timerState.remaining <= 30) el.classList.add('warning');
+}
+function onTimerEnd() {
+  stopTimer();
+  beep(400, 600);
+  setTimeout(() => beep(400, 600), 300);
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  updateTimerUI();
+  if (state.settings.timerAutoRecord) recordResult('wrong');
+}
+
+// ============================================================
+// 7. الشريط العلوي
+// ============================================================
+function renderHeader() {
+  document.getElementById('class-name').textContent = currentClass().id;
+  const { called, total } = progressStats();
+  const el = document.getElementById('progress');
+  el.textContent = `${called}/${total}`;
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+  setTimeout(() => el.classList.remove('bump'), 320);
+
+  const sc = secondChanceStudents();
+  const scBtn = document.getElementById('second-chance-btn');
+  const scCount = document.getElementById('sc-count');
+  if (sc.length > 0) {
+    scBtn.classList.remove('hidden');
+    scCount.textContent = `(${sc.length})`;
+  } else {
+    scBtn.classList.add('hidden');
+  }
+}
+
+// ============================================================
+// 8. شاشة السحب
+// ============================================================
+function renderDraw() {
+  const c = document.getElementById('draw-content');
+
+  if (state.currentStudent) {
+    const s = state.currentStudent;
+    const isSC = state.currentIsSecondChance;
+    c.innerHTML = `
+      <div class="student-card">
+        <div class="student-name">${s.name}</div>
+        <div class="student-code">${s.code}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="b-start">${t('startQuestion')}</button>
+        <button class="btn btn-secondary" id="b-absent">${t('absent')}</button>
+      </div>`;
+    document.getElementById('b-start').onclick = startQuestion;
+    document.getElementById('b-absent').onclick = markAbsent;
+    return;
+  }
+
+  const avail = availableStudents().length;
+  const availList = availableStudents();
+  const sc = secondChanceStudents().length;
+
+  if (avail === 0 && sc === 0) {
+    c.innerHTML = `
+      <div class="message">
+        <div class="big">🎉</div>
+        <h2>${t('allCalled')}</h2>
+        <p>${students().length} ${t('studentsCount')}</p>
+        <div class="actions">
+          <button class="btn btn-primary" id="b-reset">${t('newRound')}</button>
+          <button class="btn btn-secondary" id="b-reset-all">${t('resetAll')}</button>
+        </div>
+      </div>`;
+    document.getElementById('b-reset').onclick = () => resetStatuses('called');
+    document.getElementById('b-reset-all').onclick = () => resetStatuses('all');
+    return;
+  }
+
+  let actionsHTML = '';
+  if (avail > 0) {
+    actionsHTML += `<button class="btn btn-primary btn-draw" id="b-draw">🎲 ${t('chooseRandom')}</button>`;
+  }
+
+  c.innerHTML = `
+    <div class="message" style="margin-bottom:10px">
+      <div class="big">🎲</div>
+      <h2>${t('ready')}</h2>
+      <p>${avail} ${t('available')} ${students().length}</p>
+    </div>
+    <div class="actions">
+      ${actionsHTML}
+    </div>
+    ${avail > 0 ? `
+    <div class="manual-section">
+      <label>${t('chooseManually')}</label>
+      <select id="manual-select">
+        <option value="">${t('selectStudent')}</option>
+        ${availList.map(s => `<option value="${s.code}">${s.name}</option>`).join('')}
+      </select>
+    </div>` : ''}`;
+
+  if (avail > 0) {
+    document.getElementById('b-draw').onclick = () => drawStudent(false);
+    document.getElementById('manual-select').onchange = e => {
+      const code = e.target.value;
+      if (!code) return;
+      const s = students().find(x => x.code === code);
+      if (s) {
+        state.currentStudent = s;
+        state.currentIsSecondChance = false;
+        save();
+        renderHeader();
+        renderDraw();
+      }
+    };
+  }
+}
+
+// --- السحب مع Shuffle ---
+let isShuffling = false;
+
+function drawStudent(isSecondChance) {
+  if (isShuffling) return;
+  let pool = isSecondChance ? secondChanceStudents() : availableStudents();
+  
+  if (pool.length === 0) {
+    if (!isSecondChance && state.settings.exhaustedAction === 'auto-reset') {
+      resetStatuses('called');
+      pool = availableStudents();
+    }
+    if (pool.length === 0) { renderDraw(); return; }
+  }
+
+  const finalStudent = pool[rnd(0, pool.length-1)];
+
+  if (pool.length <= 1) {
+    if (navigator.vibrate) navigator.vibrate(30);
+    state.currentStudent = finalStudent;
+    state.currentIsSecondChance = isSecondChance;
+    save();
+    renderHeader();
+    renderDraw();
+    return;
+  }
+
+  isShuffling = true;
+  showShuffle(pool, finalStudent, isSecondChance, () => {
+    isShuffling = false;
+    state.currentStudent = finalStudent;
+    state.currentIsSecondChance = isSecondChance;
+    save();
+    renderHeader();
+    renderDraw();
+  });
+}
+
+function showShuffle(pool, finalStudent, isSC, onDone) {
+  const c = document.getElementById('draw-content');
+  c.innerHTML = `
+    <div class="shuffle-stage ${isSC ? 'second-chance' : ''}">
+      <div class="shuffle-title">🎲 ${isSC ? t('shufflingSecond') : t('shuffling')}</div>
+      <div class="shuffle-name" id="shuffle-name">—</div>
+      <div class="shuffle-hint">${isSC ? t('secondChancePick') : t('randomPick')}</div>
+    </div>`;
+
+  const nameEl = document.getElementById('shuffle-name');
+  let elapsed = 0;
+  const TOTAL = 1600;
+
+  function tick() {
+    if (elapsed >= TOTAL) {
+      nameEl.textContent = finalStudent.name;
+      nameEl.classList.remove('cycling');
+      nameEl.classList.add('landed');
+      beep(isSC ? 660 : 880, 150);
+      if (navigator.vibrate) navigator.vibrate([40,40,120]);
+      setTimeout(onDone, 850);
+      return;
+    }
+    const s = pool[rnd(0, pool.length-1)];
+    nameEl.textContent = s.name;
+    nameEl.classList.add('cycling');
+    const p = elapsed / TOTAL;
+    const delay = 40 + p*p*260;
+    elapsed += delay;
+    setTimeout(tick, delay);
+  }
+  tick();
+}
+
+function markAbsent() {
+  if (!state.currentStudent) return;
+  state.statuses[state.currentStudent.code] = 'absent';
+  state.currentStudent = null;
+  state.currentIsSecondChance = false;
+  save();
+  renderHeader();
+  renderDraw();
+}
+
+function recordResult(result) {
+  if (!state.currentStudent) return;
+  stopTimer();
+  const s = state.currentStudent;
+  const wasSC = state.currentIsSecondChance;
+
+  if (!state.results[s.code]) state.results[s.code] = { correct: 0, wrong: 0 };
+  state.results[s.code][result]++;
+
+  if (wasSC) {
+    // Second chance used → done definitively
+    state.statuses[s.code] = 'finished';
+  } else if (result === 'wrong') {
+    // First wrong → second chance pool
+    state.statuses[s.code] = 'wrong';
+  } else {
+    // First correct
+    state.statuses[s.code] = 'called';
+  }
+
+  state.currentStudent = null;
+  state.currentIsSecondChance = false;
+  state.currentQuestion = null;
+  save();
+  if (result === 'correct') beep(1000, 200);
+  else beep(300, 250);
+  renderHeader();
+  switchScreen('draw');
+}
+
+// ============================================================
+// 9. شاشة السؤال
+// ============================================================
+function startQuestion() {
+  if (!state.currentStudent) return;
+  state.currentQuestion = generateQuestion();
+  save();
+  switchScreen('question');
+  startTimer();
+}
+
+function renderQuestion() {
+  const c = document.getElementById('question-content');
+  const s = state.currentStudent, q = state.currentQuestion;
+  if (!s || !q) { switchScreen('draw'); return; }
+
+  const showTimer = state.settings.timerEnabled;
+  const isSC = state.currentIsSecondChance;
+
+  c.innerHTML = `
+    <div class="question-wrapper">
+      <div class="student-badge-row">
+        <div class="student-badge ${isSC ? 'second-chance' : ''}">${s.name}${isSC ? ' 🎲' : ''}</div>
+        ${showTimer ? '<div class="timer" id="timer-display"><span class="icon">⏱️</span><span>--</span></div>' : ''}
+      </div>
+      <div class="question-card">
+        <div class="question-label">${q.category}</div>
+        <div class="question-text">${q.question}</div>
+        <div id="ans" class="answer-box hidden">
+          <div class="answer-label">${t('showAnswer').replace(/[👁️🙈]/g, '').trim()}</div>
+          <div class="answer-text">${q.answer}</div>
+        </div>
+      </div>
+      <div class="question-actions">
+        <button class="btn btn-secondary" id="b-show">${t('showAnswer')}</button>
+        <button class="btn btn-secondary" id="b-regen">${t('otherQuestion')}</button>
+      </div>
+      <div class="result-actions">
+        <button class="btn btn-success" id="b-ok">✅<br>${t('correct')}</button>
+        <button class="btn btn-danger" id="b-no">❌<br>${t('wrong')}</button>
+      </div>
+      <div class="skip-row">
+        <button class="btn btn-ghost" id="b-skip">${t('skip')}</button>
+      </div>
+    </div>`;
+
+  document.getElementById('b-show').onclick = () => {
+    const ans = document.getElementById('ans');
+    if (ans.classList.contains('hidden')) {
+      ans.classList.remove('hidden');
+      document.getElementById('b-show').textContent = t('hideAnswer');
+    } else {
+      ans.classList.add('hidden');
+      document.getElementById('b-show').textContent = t('showAnswer');
+    }
+  };
+
+  document.getElementById('b-regen').onclick = () => {
+    state.currentQuestion = generateQuestion();
+    save();
+    renderQuestion();
+    startTimer();
+    beep(700, 120);
+  };
+
+  document.getElementById('b-ok').onclick = () => recordResult('correct');
+  document.getElementById('b-no').onclick = () => recordResult('wrong');
+  document.getElementById('b-skip').onclick = () => {
+    stopTimer();
+    state.currentStudent = null;
+    state.currentIsSecondChance = false;
+    state.currentQuestion = null;
+    save();
+    switchScreen('draw');
+  };
+
+  if (showTimer) updateTimerUI();
+}
+
+// ============================================================
+// 10. السجل
+// ============================================================
+function renderLog() {
+  const c = document.getElementById('log-content');
+  const stats = classStats();
+  const { called, total } = progressStats();
+  const calledPct = total > 0 ? (called/total*100).toFixed(0) : 0;
+
+  const statsHTML = `
+    <div class="stats-card">
+      <div class="stats-title">${t('statsTitle')} — ${currentClass().id}</div>
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-num">${called}/${total}</div>
+          <div class="stat-label">${t('called')}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">✅ ${stats.correct}</div>
+          <div class="stat-label">${t('correct')}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">❌ ${stats.wrong}</div>
+          <div class="stat-label">${t('wrong')}</div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${calledPct}%"></div>
+      </div>
+    </div>`;
+
+  const list = students().filter(s => {
+    const st = statusOf(s.code);
+    return st === 'called' || st === 'wrong' || st === 'finished';
+  });
+
+  if (list.length === 0) {
+    c.innerHTML = statsHTML + `<div class="message"><div class="big">📋</div><p>—</p></div>`;
+    return;
+  }
+
+  list.sort((a, b) => {
+    const ra = state.results[a.code] || {correct:0, wrong:0};
+    const rb = state.results[b.code] || {correct:0, wrong:0};
+    return (rb.correct+rb.wrong) - (ra.correct+ra.wrong);
+  });
+
+  const listHTML = list.map(s => {
+    const r = state.results[s.code] || { correct: 0, wrong: 0 };
+    const st = statusOf(s.code);
+    const tags = [];
+    if (st === 'wrong') tags.push(`<span class="tag sc">⏳ ${t('secondChanceTag')}</span>`);
+    if (st === 'finished' && r.correct + r.wrong === 0) tags.push(`<span class="tag nt">${t('notAnswered')}</span>`);
+    return `<div class="log-item">
+      <div class="name">${s.name} ${tags.join('')}</div>
+      <div class="counts">
+        <span>✅ ${r.correct}</span>
+        <span>❌ ${r.wrong}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  c.innerHTML = statsHTML + listHTML;
+}
+
+// ============================================================
+// 11. الإعدادات
+// ============================================================
+function renderSettings() {
+  const c = document.getElementById('settings-content');
+  const st = state.settings;
+  const cls = currentClass();
+
+  c.innerHTML = `
+    <div class="setting-group">
+      <h3>${t('currentClass')}</h3>
+      <div class="setting-row">
+        <label>${cls.level || '—'}</label>
+        <select id="sel-class">
+          ${DATA.classes.map(x => `<option value="${x.id}" ${x.id === state.classId ? 'selected' : ''}>${x.id}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <h3>⏱️ ${t('timer')}</h3>
+      <div class="setting-row">
+        <label>${t('enableTimer')}</label>
+        <div class="toggle ${st.timerEnabled ? 'on' : ''}" id="t-timer"></div>
+      </div>
+      <div class="setting-row">
+        <label>${t('timerDuration')}</label>
+        <select id="sel-duration" ${!st.timerEnabled ? 'disabled' : ''}>
+          ${[30,60,90,120,180].map(d => `<option value="${d}" ${d === st.timerDuration ? 'selected' : ''}>${d}s</option>`).join('')}
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>${t('autoRecord')}</label>
+        <div class="toggle ${st.timerAutoRecord ? 'on' : ''}" id="t-timerrec"></div>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <h3>${t('behavior')}</h3>
+      <div class="setting-row">
+        <label>${t('allowRecall')}</label>
+        <div class="toggle ${st.allowRecall ? 'on' : ''}" id="t-recall"></div>
+      </div>
+      <div class="setting-row">
+        <label>${t('exhausted')}</label>
+        <select id="sel-exh">
+          <option value="message" ${st.exhaustedAction === 'message' ? 'selected' : ''}>${t('msgOnly')}</option>
+          <option value="auto-reset" ${st.exhaustedAction === 'auto-reset' ? 'selected' : ''}>${t('autoReset')}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <h3>${t('appearance')}</h3>
+      <div class="setting-row">
+        <label>${t('darkMode')}</label>
+        <div class="toggle ${st.theme === 'dark' ? 'on' : ''}" id="t-theme"></div>
+      </div>
+      <div class="setting-row">
+        <label>${t('language')}</label>
+        <select id="sel-lang">
+          <option value="ar" ${st.lang === 'ar' ? 'selected' : ''}>${t('arabic')}</option>
+          <option value="fr" ${st.lang === 'fr' ? 'selected' : ''}>${t('french')}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <h3>${t('transfer')}</h3>
+      <p class="hint">${t('transferHint')}</p>
+      <div class="setting-row">
+        <label>${t('exportState')} (JSON)</label>
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:14px;" id="b-export-state">${t('exportState')}</button>
+      </div>
+      <div class="setting-row">
+        <label>${t('importState')} (JSON)</label>
+        <input type="file" id="file-import" accept=".json" style="display:none;">
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:14px;" id="b-import-state">${t('importState')}</button>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <h3>${t('importStudents')}</h3>
+      <p class="hint">${t('importStudentsHint')}</p>
+      <input type="file" id="file-students" accept=".json,.js" style="display:none;">
+      <button class="btn btn-secondary" style="width:100%;padding:12px;font-size:14px;" id="b-import-students">${t('importStudents')}</button>
+    </div>
+
+    <div class="setting-group">
+      <h3>${t('manualManage')}</h3>
+      <p class="hint">${t('manualHint')}</p>
+      <div class="student-list" id="student-list">
+        ${students().map(s => `
+          <label class="student-row">
+            <input type="checkbox" data-code="${s.code}" ${['called','wrong','finished'].includes(statusOf(s.code)) ? 'checked' : ''}>
+            <span class="sname">${s.name}</span>
+            <span class="scode">${s.code}</span>
+          </label>
+        `).join('')}
+      </div>
+      <div class="list-toolbar">
+        <button id="btn-check-all">${t('checkAll')}</button>
+        <button id="btn-uncheck-all">${t('uncheckAll')}</button>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <h3>${t('manage')}</h3>
+      <div class="setting-row">
+        <label>${t('resetCalled')}</label>
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:14px;" id="b-rc">${t('reset')}</button>
+      </div>
+      <div class="setting-row">
+        <label>${t('resetEverything')}</label>
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:14px;" id="b-ra">${t('reset')}</button>
+      </div>
+      <div class="setting-row">
+        <label>${t('exportCSV')}</label>
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:14px;" id="b-exp">${t('exportCSV')}</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">
+      ${DATA.institution} — ${DATA.teacher} — ${DATA.year}
+    </div>`;
+
+  document.getElementById('sel-class').onchange = e => {
+    state.classId = e.target.value;
+    state.currentStudent = null;
+    state.currentQuestion = null;
+    save(); renderHeader(); renderSettings();
+  };
+  document.getElementById('t-timer').onclick = () => {
+    state.settings.timerEnabled = !state.settings.timerEnabled;
+    save(); renderSettings();
+  };
+  document.getElementById('sel-duration').onchange = e => {
+    state.settings.timerDuration = parseInt(e.target.value);
+    save();
+  };
+  document.getElementById('t-timerrec').onclick = () => {
+    state.settings.timerAutoRecord = !state.settings.timerAutoRecord;
+    save(); renderSettings();
+  };
+  document.getElementById('t-recall').onclick = () => {
+    state.settings.allowRecall = !state.settings.allowRecall;
+    save(); renderSettings();
+  };
+  document.getElementById('sel-exh').onchange = e => {
+    state.settings.exhaustedAction = e.target.value;
+    save();
+  };
+  document.getElementById('t-theme').onclick = () => {
+    state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(); save(); renderSettings();
+  };
+  document.getElementById('sel-lang').onchange = e => {
+    state.settings.lang = e.target.value;
+    applyLanguage(); save(); renderSettings();
+  };
+
+  document.getElementById('b-export-state').onclick = exportState;
+  document.getElementById('b-import-state').onclick = () => document.getElementById('file-import').click();
+  document.getElementById('file-import').onchange = e => {
+    const f = e.target.files[0];
+    if (f) importState(f);
+    e.target.value = '';
+  };
+
+  document.getElementById('b-import-students').onclick = () => document.getElementById('file-students').click();
+  document.getElementById('file-students').onchange = e => {
+    const f = e.target.files[0];
+    if (f) importStudents(f);
+    e.target.value = '';
+  };
+
+  document.querySelectorAll('#student-list input[type=checkbox]').forEach(inp => {
+    inp.onchange = () => {
+      const code = inp.dataset.code;
+      if (inp.checked) state.statuses[code] = 'called';
+      else delete state.statuses[code];
+      save(); renderHeader();
+    };
+  });
+  document.getElementById('btn-check-all').onclick = () => {
+    students().forEach(s => state.statuses[s.code] = 'called');
+    save(); renderHeader(); renderSettings();
+  };
+  document.getElementById('btn-uncheck-all').onclick = () => {
+    students().forEach(s => delete state.statuses[s.code]);
+    save(); renderHeader(); renderSettings();
+  };
+
+  document.getElementById('b-rc').onclick = () => {
+    if (confirm(t('confirmResetCalled'))) {
+      resetStatuses('called'); renderSettings();
+    }
+  };
+  document.getElementById('b-ra').onclick = () => {
+    if (confirm(t('confirmResetAll'))) {
+      resetStatuses('all'); renderSettings();
+    }
+  };
+  document.getElementById('b-exp').onclick = exportCSV;
+}
+
+// ============================================================
+// 12. عمليات الإدارة
+// ============================================================
+function resetStatuses(scope) {
+  if (scope === 'called') {
+    Object.keys(state.statuses).forEach(k => {
+      if (['called','wrong','finished'].includes(state.statuses[k])) delete state.statuses[k];
+    });
+  } else {
+    state.statuses = {};
+    state.results = {};
+  }
+  state.currentStudent = null;
+  state.currentIsSecondChance = false;
+  state.currentQuestion = null;
+  save();
+  renderHeader();
+  switchScreen('draw');
+}
+
+function exportCSV() {
+  const rows = [[t('nameLabel'), t('codeLabel'), t('correct'), t('wrong')]];
+  students().forEach(s => {
+    const r = state.results[s.code] || { correct: 0, wrong: 0 };
+    rows.push([s.name, s.code, r.correct, r.wrong]);
+  });
+  const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `journal-${state.classId}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportState() {
+  const data = {
+    _meta: { exported_at: new Date().toISOString(), institution: DATA.institution, teacher: DATA.teacher, version: 'v6' },
+    ...state
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type:'application/json;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `state-${state.classId}-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importState(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported || !imported.settings) throw new Error('Invalid');
+      const msg = t('confirmImport') + `${imported._meta?.institution || '—'}\n${imported.classId || '—'}` + t('confirmImport2');
+      if (!confirm(msg)) return;
+      state = { ...defaults(), ...imported, settings: { ...defaults().settings, ...imported.settings } };
+      delete state._meta;
+      save(); applyLanguage(); applyTheme(); renderHeader(); switchScreen('draw');
+      alert(t('importedSuccess'));
+    } catch (err) { alert(t('importError') + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function importStudents(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      let text = e.target.result.trim();
+      // Support both "window.STUDENTS_DATA = {...}" and raw JSON
+      const match = text.match(/^window\.STUDENTS_DATA\s*=\s*/);
+      if (match) text = text.substring(match[0].length);
+      if (text.endsWith(';')) text = text.slice(0, -1);
+      const newData = JSON.parse(text);
+      if (!newData.classes || !Array.isArray(newData.classes)) {
+        throw new Error('Structure invalide — classes manquantes');
+      }
+      if (!confirm(`✅ ${newData.classes.length} قسم، ${newData.classes.reduce((a,c)=>a+c.students.length,0)} تلميذاً\n\nاستبدال القائمة الحالية؟`)) return;
+      
+      DATA = newData;
+      state.classId = DATA.classes[0].id;
+      state.statuses = {};
+      state.results = {};
+      state.currentStudent = null;
+      state.currentQuestion = null;
+      state.currentIsSecondChance = false;
+      save();
+      renderHeader();
+      renderSettings();
+      alert('✅ ' + t('importedSuccess'));
+    } catch (err) { alert(t('importError') + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// 13. التنقل
+// ============================================================
+let currentScreen = 'draw';
+function switchScreen(name) {
+  if (currentScreen === 'question' && name !== 'question') stopTimer();
+  currentScreen = name;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + name);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
+  if (name === 'draw')     renderDraw();
+  if (name === 'log')      renderLog();
+  if (name === 'settings') renderSettings();
+  if (name === 'question') renderQuestion();
+}
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', state.settings.theme);
+}
+
+// ============================================================
+// 14. التشغيل
+// ============================================================
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => switchScreen(b.dataset.screen));
+
+// زر الفرصة الثانية في الشريط العلوي
+document.getElementById('second-chance-btn').onclick = () => {
+  if (isShuffling) return;
+  drawStudent(true);
+};
+
+applyTheme();
+applyLanguage();
+renderHeader();
+
+if (state.currentStudent && state.currentQuestion) {
+  switchScreen('question');
+  startTimer();
+} else {
+  if (state.currentStudent) state.currentStudent = null;
+  switchScreen('draw');
+}
+
+// Service Worker
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
